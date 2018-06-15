@@ -233,6 +233,12 @@ class ClickUp(metaclass=YAMLGetter):
     key: str
 
 
+class Gitlab(metaclass=YAMLGetter):
+    section = "gitlab"
+
+    key: str
+
+
 class RabbitMQ(metaclass=YAMLGetter):
     section = "rabbitmq"
 

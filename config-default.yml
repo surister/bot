@@ -55,6 +55,10 @@ clickup:
     key: !ENV 'CLICKUP_KEY'
 
 
+gitlab:
+    key: !ENV 'GITLAB_KEY'
+
+
 rabbitmq:
     host: "pdrmq"
     port: 5672

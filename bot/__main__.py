@@ -5,7 +5,7 @@ from aiohttp import AsyncResolver, ClientSession, TCPConnector
 from discord import Game
 from discord.ext.commands import Bot, when_mentioned_or
 
-from bot.constants import Bot as BotConfig, ClickUp
+from bot.constants import Bot as BotConfig, ClickUp, Gitlab
 from bot.formatter import Formatter
 from bot.utils.service_discovery import wait_for_rmq
 
@@ -60,6 +60,10 @@ if ClickUp.key is not None:
     bot.load_extension("bot.cogs.clickup")
 else:
     log.info("`CLICKUP_KEY` not set in the environment, not loading the ClickUp cog.")
+if Gitlab.key is not None:
+    bot.load_extension("bot.cogs.gitlab")
+else:
+    log.info("`GITLAB_KEY` not set in the environment, not loading the ClickUp cog.")
 
 bot.load_extension("bot.cogs.deployment")
 bot.load_extension("bot.cogs.doc")
