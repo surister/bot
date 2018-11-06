@@ -13,11 +13,11 @@ class AocLeaderboard:
         """
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
-    def _top5(self) -> typing.Dict:
+    def _top_n(self, n: int = 5) -> typing.Dict:
         """
         Return the top 5 participants on the leaderboard
         """
-        raise NotImplementedError
+        return self.members[:n]
 
     @staticmethod
     def _new_from_json(injson: typing.Dict) -> "AocLeaderboard":
@@ -76,7 +76,7 @@ class AocMember:
         Returns an AocMember object
         """
         return AocMember(
-            name=injson["name"],
+            name=injson["name"] if injson["name"] else "Anonymous User",
             aoc_id=int(injson["id"]),
             stars=injson["stars"],
             starboard=AocMember._starboard_from_json(injson["completion_day_level"]),
