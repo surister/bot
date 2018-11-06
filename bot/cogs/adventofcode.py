@@ -6,13 +6,12 @@ class AocLeaderboard:
         self.members = members
         self._owner_id = owner_id
         self._event_year = event_year
-        self._ranking = None
 
     def _update(self, injson: typing.Dict):
         """
-        Update members & recalculate _ranking
+        From AoC's private leaderboard API JSON, update members & resort
         """
-        raise NotImplementedError
+        self.members = AocLeaderboard._sorted_members(injson["members"])
 
     def _top5(self) -> typing.Dict:
         """
@@ -26,13 +25,23 @@ class AocLeaderboard:
         Generate an AocLeaderboard object from AoC's private leaderboard API JSON
         """
         return AocLeaderboard(
-            members=[
-                AocMember._member_from_json(injson["members"][member])
-                for member in injson["members"]
-            ],
+            members=AocLeaderboard._sorted_members(injson["members"]),
             owner_id=injson["owner_id"],
             event_year=injson["event"],
         )
+
+    @staticmethod
+    def _sorted_members(injson: typing.Dict) -> typing.List:
+        """
+        Generate a sorted list of AocMember objects from AoC's private leaderboard API JSON
+        
+        Output list is sorted based on the AocMember.local_score
+        """
+
+        members = [AocMember._member_from_json(injson[member]) for member in injson]
+        members.sort(key=lambda x: x.local_score, reverse=True)
+
+        return members
 
 
 class AocMember:
@@ -51,6 +60,9 @@ class AocMember:
         self.starboard = starboard
         self.local_score = local_score
         self.global_score = global_score
+
+    def __repr__(self):
+        return f"<{self.name} ({self.aoc_id}): {self.local_score}>"
 
     @staticmethod
     def _member_from_json(injson: typing.Dict) -> "AocMember":
