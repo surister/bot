@@ -1,4 +1,7 @@
 import typing
+from datetime import datetime
+
+import aiohttp
 
 
 class AocLeaderboard:
@@ -20,6 +23,24 @@ class AocLeaderboard:
         return self.members[:n]
 
     @staticmethod
+    async def _from_url(
+        leaderboard_id: int = 363275, year: int = datetime.today().year
+    ) -> "AocLeaderboard":
+        """
+        Request the API JSON from Advent of Code for leaderboard_id for the specified year's event
+
+        If no year is input, year defaults to the current year
+        """
+        api_url = f"https://adventofcode.com/{year}/leaderboard/private/view/{leaderboard_id}.json"
+
+        # TODO: Add headers, proper authentication (need Volcyy to get & store cookie to env)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url) as resp:
+                rawdict = await resp.json()
+
+        return AocLeaderboard._new_from_json(rawdict)
+
+    @staticmethod
     def _new_from_json(injson: typing.Dict) -> "AocLeaderboard":
         """
         Generate an AocLeaderboard object from AoC's private leaderboard API JSON
@@ -34,7 +55,7 @@ class AocLeaderboard:
     def _sorted_members(injson: typing.Dict) -> typing.List:
         """
         Generate a sorted list of AocMember objects from AoC's private leaderboard API JSON
-        
+
         Output list is sorted based on the AocMember.local_score
         """
 
@@ -68,11 +89,11 @@ class AocMember:
     def _member_from_json(injson: typing.Dict) -> "AocMember":
         """
         Generate an AocMember from AoC's private leaderboard API JSON
-        
+
         injson is expected to be the dict contained in:
-        
+
             AoC_APIjson['members'][<member id>:str]
-            
+
         Returns an AocMember object
         """
         return AocMember(
@@ -88,12 +109,12 @@ class AocMember:
     def _starboard_from_json(injson: typing.Dict) -> typing.List:
         """
         Generate starboard from AoC's private leaderboard API JSON
-        
+
         injson is expected to be the dict contained in:
-            
+
             AoC_APIjson['members'][<member id>:str]['completion_day_level']
-        
-        Returns a list of 25 lists, where each nested list contains a pair of booleans representing 
+
+        Returns a list of 25 lists, where each nested list contains a pair of booleans representing
         the code challenge completion status for that day
         """
         # Basic input validation
