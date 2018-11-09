@@ -1,7 +1,78 @@
+import asyncio
+import logging
 import typing
 from datetime import datetime
 
 import aiohttp
+from discord.ext import commands
+
+from bot.constants import Roles
+from bot.decorators import with_role
+
+log = logging.getLogger(__name__)
+
+
+class AdventOfCode:
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+        self.cached_leaderboard = None
+
+    @commands.group(
+        name="adventofcode",
+        aliases=("AoC",),
+        invoke_without_command=True,
+        case_insensitive=True,
+    )
+    async def adventofcode_group(self, ctx: commands.Context):
+        """
+        Advent of Code festivities! Ho Ho Ho!
+        """
+        await ctx.invoke(self.bot.get_command("help"), "adventofcode")
+
+    @adventofcode_group.command(name="about", aliases=("ab",))
+    async def about_aoc(self, ctx: commands.Context):
+        """
+        Display an embed explaining all things Advent of Code
+        """
+        raise NotImplementedError
+
+    @adventofcode_group.command(name="join", aliases=("j",))
+    async def join_leaderboard(self, ctx: commands.Context):
+        """
+        Reply with the link to join the PyDis AoC private leaderboard
+        """
+        raise NotImplementedError
+
+    @adventofcode_group.command(name="reauthenticate", aliases=("auth",))
+    @with_role(Roles.owner, Roles.admin)
+    async def reauthenticate(self, ctx: commands.Context):
+        """
+        Helper method to reload authentication from its environmental variable in the event
+        of login expiration
+        """
+        raise NotImplementedError
+
+    @adventofcode_group.command(name="leaderboard", aliases=("board", "stats"))
+    async def aoc_leaderboard(self, ctx: commands.Context, n_disp: int = 10):
+        """
+        Pull the top n_disp members from the PyDis leaderboard and post an embed
+        """
+        raise NotImplementedError
+
+    async def aoc_update_loop(self, seconds_to_sleep: int = 3600):
+        """
+        Async timer to update AoC leaderboard
+        """
+        while True:
+            if self.cached_leaderboard:
+                self.cached_leaderboard._update()
+            else:
+                # Leaderboard hasn't been cached yet
+                log.info("No cached AoC leaderboard found")
+                self.cached_leaderboard = await AocLeaderboard._from_url()
+
+            asyncio.sleep(seconds_to_sleep)
 
 
 class AocLeaderboard:
@@ -14,6 +85,7 @@ class AocLeaderboard:
         """
         From AoC's private leaderboard API JSON, update members & resort
         """
+        log.info("Updating cached Advent of Code Leaderboard")
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
     def _top_n(self, n: int = 5) -> typing.Dict:
@@ -24,7 +96,7 @@ class AocLeaderboard:
 
     @staticmethod
     async def _from_url(
-        leaderboard_id: int = 363275, year: int = datetime.today().year
+        leaderboard_id: int = 363_275, year: int = datetime.today().year
     ) -> "AocLeaderboard":
         """
         Request the API JSON from Advent of Code for leaderboard_id for the specified year's event
@@ -33,7 +105,9 @@ class AocLeaderboard:
         """
         api_url = f"https://adventofcode.com/{year}/leaderboard/private/view/{leaderboard_id}.json"
 
-        # TODO: Add headers, proper authentication (need Volcyy to get & store cookie to env)
+        # TODO: Add headers, authentication (need Volcyy to get & store cookie to env)
+        # TODO: Add handling for denied request
+        log.debug("Querying Advent of Code Private Leaderboard API")
         async with aiohttp.ClientSession() as session:
             async with session.get(api_url) as resp:
                 rawdict = await resp.json()
@@ -123,7 +197,7 @@ class AocMember:
 
         # Initialize starboard
         starboard = []
-        for i in range(25):
+        for _i in range(25):
             starboard.append([False, False])
 
         # Iterate over days, which are the keys of injson (as str)
@@ -137,3 +211,8 @@ class AocMember:
                 starboard[idx] = [True, False]
 
         return starboard
+
+
+def setup(bot: commands.Bot) -> None:
+    bot.add_cog(AdventOfCode(bot))
+    log.info("Cog loaded: adventofcode")
