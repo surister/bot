@@ -2,11 +2,13 @@ import asyncio
 import logging
 import typing
 from datetime import datetime
+from pathlib import Path
 
 import aiohttp
+import discord
 from discord.ext import commands
 
-from bot.constants import Roles
+from bot.constants import Roles, Colours, Emojis
 from bot.decorators import with_role
 
 log = logging.getLogger(__name__)
@@ -17,6 +19,10 @@ class AdventOfCode:
         self.bot = bot
 
         self.cached_leaderboard = None
+        self._leaderboard_code = "363275-442b6939"
+        self._leaderboard_link = (
+            "https://adventofcode.com/2018/leaderboard/private/view/363275"
+        )
 
     @commands.group(
         name="adventofcode",
@@ -33,16 +39,24 @@ class AdventOfCode:
     @adventofcode_group.command(name="about", aliases=("ab",))
     async def about_aoc(self, ctx: commands.Context):
         """
-        Display an embed explaining all things Advent of Code
+        Respond with an explanation all things Advent of Code
         """
-        raise NotImplementedError
+        about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
+        with about_aoc_filepath.open("r") as f:
+            aoc_info_txt = f.read()
+
+        await ctx.send(aoc_info_txt)
 
     @adventofcode_group.command(name="join", aliases=("j",))
     async def join_leaderboard(self, ctx: commands.Context):
         """
         Reply with the link to join the PyDis AoC private leaderboard
         """
-        raise NotImplementedError
+        info_str = (
+            "Head over to https://adventofcode.com/leaderboard/private "
+            f"with code `{self._leaderboard_code}` to join the PyDis private leaderboard!"
+        )
+        ctx.send(info_str)
 
     @adventofcode_group.command(name="reauthenticate", aliases=("auth",))
     @with_role(Roles.owner, Roles.admin)
@@ -57,8 +71,60 @@ class AdventOfCode:
     async def aoc_leaderboard(self, ctx: commands.Context, n_disp: int = 10):
         """
         Pull the top n_disp members from the PyDis leaderboard and post an embed
+
+        For readability, n_disp is capped at 10. Responses greater than this limit
+        (or less than 1) will default to 10 prompt a direct link to the leaderboard.
         """
-        raise NotImplementedError
+        max_entries = 10
+
+        # Check for n > max_entries and n <= 0
+        _author = ctx.message.author
+        if 0 <= n_disp <= max_entries:
+            log.debug(
+                f"{_author.name} ({_author.id}) attempted to fetch an invalid number "
+                f" of entries from the AoC leaderboard ({n_disp})"
+            )
+            ctx.send(
+                f"{_author.mention}, number of entries to display must be a positive "
+                f"integer less than {n_disp}"
+                f"\n\nHead to {self._leaderboard_link} to view the entire leaderboard"
+            )
+
+        # Generate leaderboard table for embed
+        members_to_print = self.cached_leaderboard._top_n(n_disp)
+        header = f"{' '*4}{'Score':6}  {'Name':^25} {'Stars':^16}\n{'-'*54}\n"
+        table = ""
+        for i, member in enumerate(members_to_print):
+            if member.name == "Anonymous User":
+                name = f"{member.name} #{member.aoc_id}"
+            else:
+                name = member.name
+
+            table += (
+                f"{i+1:2})  {member.local_score:4}  {name:25.25} "
+                f"({i+1:2} {Emojis.star*2}, {i+1:2} {Emojis.star})"
+            )
+        else:
+            table = header + table
+
+        # Build embed
+        aoc_embed = discord.Embed(
+            colour=Colours.soft_green,
+            description=table,
+            timestamp=self.cached_leaderboard._last_updated,
+        )
+        aoc_embed.set_thumbnail(url="https://imgur.com/wOwzKUX.jpg")  # TODO: Change to PyDis Christmas logo
+        aoc_embed.set_author(
+            name="Advent of Code",
+            url="https://adventofcode.com/",
+            icon_url="https://adventofcode.com/favicon.ico",
+        )
+        aoc_embed.set_footer(text="Last Updated")
+
+        await ctx.say(
+            content=f"Here's the current leaderboard! {Emojis.christmastree*3}",
+            embed=aoc_embed,
+        )
 
     async def aoc_update_loop(self, seconds_to_sleep: int = 3600):
         """
@@ -69,7 +135,7 @@ class AdventOfCode:
                 self.cached_leaderboard._update()
             else:
                 # Leaderboard hasn't been cached yet
-                log.info("No cached AoC leaderboard found")
+                log.debug("No cached AoC leaderboard found")
                 self.cached_leaderboard = await AocLeaderboard._from_url()
 
             asyncio.sleep(seconds_to_sleep)
@@ -80,17 +146,21 @@ class AocLeaderboard:
         self.members = members
         self._owner_id = owner_id
         self._event_year = event_year
+        self._last_updated = datetime.utcnow()
 
     def _update(self, injson: typing.Dict):
         """
         From AoC's private leaderboard API JSON, update members & resort
         """
-        log.info("Updating cached Advent of Code Leaderboard")
+        log.debug("Updating cached Advent of Code Leaderboard")
+        # TODO Pull down new JSON`
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
-    def _top_n(self, n: int = 5) -> typing.Dict:
+    def _top_n(self, n: int = 10) -> typing.Dict:
         """
-        Return the top 5 participants on the leaderboard
+        Return the top n participants on the leaderboard.
+
+        If n is not specified, default to the top 10
         """
         return self.members[:n]
 

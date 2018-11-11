@@ -250,6 +250,9 @@ class Emojis(metaclass=YAMLGetter):
     pencil: str
     cross_mark: str
 
+    star:str
+    christmastree: str
+
 
 class Icons(metaclass=YAMLGetter):
     section = "style"
