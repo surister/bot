@@ -125,7 +125,7 @@ class AdventOfCode:
                 f"({member.completions[0]:2}, {member.completions[1]:2})\n"
             )
         else:
-            table = f"```{header}\n{table}\n{footer}```"
+            table = f"```{header}\n{table}```\n\n\n{footer}"
 
         # Build embed
         aoc_embed = discord.Embed(
