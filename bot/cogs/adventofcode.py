@@ -8,10 +8,12 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot.constants import Roles, Colours, Emojis
+from bot.constants import Roles, Colours, Emojis, BotConfig
 from bot.decorators import with_role
 
 log = logging.getLogger(__name__)
+
+AOC_SESSION_COOKIE = {"session": BotConfig.aoc_session_cookie}
 
 
 class AdventOfCode:
@@ -75,6 +77,13 @@ class AdventOfCode:
         For readability, n_disp is capped at 10. Responses greater than this limit
         (or less than 1) will default to 10 prompt a direct link to the leaderboard.
         """
+        if not self.cached_leaderboard:
+            await ctx.send(
+                "Uh oh! Something's gone wrong and there's no cached leaderboard!\n\n",
+                "Please check in with a staff member.",
+            )
+            return
+
         max_entries = 10
 
         # Check for n > max_entries and n <= 0
@@ -174,12 +183,19 @@ class AocLeaderboard:
         """
         api_url = f"https://adventofcode.com/{year}/leaderboard/private/view/{leaderboard_id}.json"
 
-        # TODO: Add headers, authentication (need Volcyy to get & store cookie to env)
-        # TODO: Add handling for denied request
         log.debug("Querying Advent of Code Private Leaderboard API")
-        async with aiohttp.ClientSession() as session:
+        headers = {"user-agent": "PythonDiscord AoC Event Bot"}
+        async with aiohttp.ClientSession(
+            cookies=AOC_SESSION_COOKIE, headers=headers
+        ) as session:
             async with session.get(api_url) as resp:
-                rawdict = await resp.json()
+                if resp.status == 200:
+                    rawdict = await resp.json()
+                else:
+                    log.warning(
+                        f"Bad response received from AoC ({resp.status}), check session cookie"
+                    )
+                    resp.raise_for_status()
 
         return rawdict
 

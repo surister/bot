@@ -190,6 +190,7 @@ class Bot(metaclass=YAMLGetter):
 
     help_prefix: str
     token: str
+    aoc_session_cookie: str
 
 
 class Filter(metaclass=YAMLGetter):
