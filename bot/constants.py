@@ -251,7 +251,7 @@ class Emojis(metaclass=YAMLGetter):
     pencil: str
     cross_mark: str
 
-    star:str
+    star: str
     christmastree: str
 
 

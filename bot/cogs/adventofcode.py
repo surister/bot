@@ -8,7 +8,7 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot.constants import Roles, Colours, Emojis, BotConfig
+from bot.constants import BotConfig, Colours, Emojis, Roles
 from bot.decorators import with_role
 
 log = logging.getLogger(__name__)
@@ -28,9 +28,9 @@ class AdventOfCode:
 
     @commands.group(
         name="adventofcode",
-        aliases=("AOC", "AoC", "Aoc", "aoC", "aoc"),
+        aliases=("aoc",),
         invoke_without_command=True,
-        case_insensitive=True,  # Apparently doesn't apply to group invocation
+        case_insensitive=True,
     )
     async def adventofcode_group(self, ctx: commands.Context):
         """
