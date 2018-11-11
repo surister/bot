@@ -26,9 +26,9 @@ class AdventOfCode:
 
     @commands.group(
         name="adventofcode",
-        aliases=("AoC",),
+        aliases=("AOC", "AoC", "Aoc", "aoC", "aoc"),
         invoke_without_command=True,
-        case_insensitive=True,
+        case_insensitive=True,  # Apparently doesn't apply to group invocation
     )
     async def adventofcode_group(self, ctx: commands.Context):
         """
@@ -36,7 +36,7 @@ class AdventOfCode:
         """
         await ctx.invoke(self.bot.get_command("help"), "adventofcode")
 
-    @adventofcode_group.command(name="about", aliases=("ab",))
+    @adventofcode_group.command(name="about", aliases=("ab", "info"))
     async def about_aoc(self, ctx: commands.Context):
         """
         Respond with an explanation all things Advent of Code
@@ -56,7 +56,7 @@ class AdventOfCode:
             "Head over to https://adventofcode.com/leaderboard/private "
             f"with code `{self._leaderboard_code}` to join the PyDis private leaderboard!"
         )
-        ctx.send(info_str)
+        await ctx.send(info_str)
 
     @adventofcode_group.command(name="reauthenticate", aliases=("auth",))
     @with_role(Roles.owner, Roles.admin)
@@ -79,20 +79,22 @@ class AdventOfCode:
 
         # Check for n > max_entries and n <= 0
         _author = ctx.message.author
-        if 0 <= n_disp <= max_entries:
+        if not 0 <= n_disp <= max_entries:
             log.debug(
                 f"{_author.name} ({_author.id}) attempted to fetch an invalid number "
                 f" of entries from the AoC leaderboard ({n_disp})"
             )
-            ctx.send(
+            await ctx.send(
                 f"{_author.mention}, number of entries to display must be a positive "
-                f"integer less than {n_disp}"
+                f"integer less than or equal to {max_entries}"
                 f"\n\nHead to {self._leaderboard_link} to view the entire leaderboard"
             )
+            n_disp = max_entries
 
         # Generate leaderboard table for embed
         members_to_print = self.cached_leaderboard._top_n(n_disp)
-        header = f"{' '*4}{'Score':6}  {'Name':^25} {'Stars':^16}\n{'-'*54}\n"
+        stargroup = f"{Emojis.star}, {Emojis.star*2}"
+        header = f"{' '*3}{'Score'} {'Name':^25} {stargroup:^7}\n{'-'*44}"
         table = ""
         for i, member in enumerate(members_to_print):
             if member.name == "Anonymous User":
@@ -101,28 +103,25 @@ class AdventOfCode:
                 name = member.name
 
             table += (
-                f"{i+1:2})  {member.local_score:4}  {name:25.25} "
-                f"({i+1:2} {Emojis.star*2}, {i+1:2} {Emojis.star})"
+                f"{i+1:2}) {member.local_score:4} {name:25.25} "
+                f"({member.completions[0]:2}, {member.completions[1]:2})\n"
             )
         else:
-            table = header + table
+            table = f"```{header}\n{table}```"
 
         # Build embed
         aoc_embed = discord.Embed(
-            colour=Colours.soft_green,
-            description=table,
-            timestamp=self.cached_leaderboard._last_updated,
+            colour=Colours.soft_green, timestamp=self.cached_leaderboard._last_updated
         )
-        aoc_embed.set_thumbnail(url="https://imgur.com/wOwzKUX.jpg")  # TODO: Change to PyDis Christmas logo
         aoc_embed.set_author(
             name="Advent of Code",
-            url="https://adventofcode.com/",
+            url=self._leaderboard_link,
             icon_url="https://adventofcode.com/favicon.ico",
         )
         aoc_embed.set_footer(text="Last Updated")
 
-        await ctx.say(
-            content=f"Here's the current leaderboard! {Emojis.christmastree*3}",
+        await ctx.send(
+            content=f"Here's the current Top {n_disp}! {Emojis.christmastree*3}\n\n{table}",
             embed=aoc_embed,
         )
 
@@ -131,14 +130,15 @@ class AdventOfCode:
         Async timer to update AoC leaderboard
         """
         while True:
+            rawjson = await AocLeaderboard._from_url()
             if self.cached_leaderboard:
-                self.cached_leaderboard._update()
+                self.cached_leaderboard._update(rawjson)
             else:
                 # Leaderboard hasn't been cached yet
                 log.debug("No cached AoC leaderboard found")
-                self.cached_leaderboard = await AocLeaderboard._from_url()
+                self.cached_leaderboard = AocLeaderboard._from_json(rawjson)
 
-            asyncio.sleep(seconds_to_sleep)
+            await asyncio.sleep(seconds_to_sleep)
 
 
 class AocLeaderboard:
@@ -153,7 +153,6 @@ class AocLeaderboard:
         From AoC's private leaderboard API JSON, update members & resort
         """
         log.debug("Updating cached Advent of Code Leaderboard")
-        # TODO Pull down new JSON`
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
     def _top_n(self, n: int = 10) -> typing.Dict:
@@ -165,7 +164,7 @@ class AocLeaderboard:
         return self.members[:n]
 
     @staticmethod
-    async def _from_url(
+    async def _json_from_url(
         leaderboard_id: int = 363_275, year: int = datetime.today().year
     ) -> "AocLeaderboard":
         """
@@ -182,10 +181,10 @@ class AocLeaderboard:
             async with session.get(api_url) as resp:
                 rawdict = await resp.json()
 
-        return AocLeaderboard._new_from_json(rawdict)
+        return rawdict
 
     @staticmethod
-    def _new_from_json(injson: typing.Dict) -> "AocLeaderboard":
+    def _from_json(injson: typing.Dict) -> "AocLeaderboard":
         """
         Generate an AocLeaderboard object from AoC's private leaderboard API JSON
         """
@@ -225,6 +224,7 @@ class AocMember:
         self.starboard = starboard
         self.local_score = local_score
         self.global_score = global_score
+        self.completions = self._completions_from_starboard(self.starboard)
 
     def __repr__(self):
         return f"<{self.name} ({self.aoc_id}): {self.local_score}>"
@@ -281,6 +281,20 @@ class AocMember:
                 starboard[idx] = [True, False]
 
         return starboard
+
+    @staticmethod
+    def _completions_from_starboard(starboard: typing.List) -> typing.Tuple:
+        """
+        Return a tuple of days completed, as a (1 star, 2 star) tuple, from starboard
+        """
+        completions = [0, 0]
+        for day in starboard:
+            if day[0]:
+                completions[0] += 1
+            if day[1]:
+                completions[1] += 1
+
+        return tuple(completions)
 
 
 def setup(bot: commands.Bot) -> None:
