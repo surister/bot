@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import typing
 from datetime import datetime
 from pathlib import Path
@@ -67,7 +68,14 @@ class AdventOfCode:
         Helper method to reload authentication from its environmental variable in the event
         of login expiration
         """
-        raise NotImplementedError
+        global AOC_SESSION_COOKIE
+        author = ctx.message.author
+        log.debug(f"AoC session cookie update forced by {author.name} ({author.id})")
+        try:
+            AOC_SESSION_COOKIE = {"session": os.environ["AOC_SESSION_COOKIE"]}
+        except KeyError:
+            log.warning("AoC session key environment variable is not set")
+            ctx.send("AoC session key environment variable is not set")
 
     @adventofcode_group.command(name="leaderboard", aliases=("board", "stats"))
     async def aoc_leaderboard(self, ctx: commands.Context, n_disp: int = 10):
