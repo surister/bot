@@ -112,6 +112,7 @@ class AdventOfCode:
         members_to_print = self.cached_leaderboard._top_n(n_disp)
         stargroup = f"{Emojis.star}, {Emojis.star*2}"
         header = f"{' '*3}{'Score'} {'Name':^25} {stargroup:^7}\n{'-'*44}"
+        footer = f"Last updated: {self.cached_leaderboard._last_updated}"
         table = ""
         for i, member in enumerate(members_to_print):
             if member.name == "Anonymous User":
@@ -124,7 +125,7 @@ class AdventOfCode:
                 f"({member.completions[0]:2}, {member.completions[1]:2})\n"
             )
         else:
-            table = f"```{header}\n{table}```"
+            table = f"```{header}\n{table}\n{footer}```"
 
         # Build embed
         aoc_embed = discord.Embed(
