@@ -23,8 +23,7 @@ class AdventOfCode:
         self.bot = bot
 
         self.leaderboard_link = (
-            f"https://adventofcode.com/{Aoc_Constant.year}/leaderboard/private/view/"
-            f"{Aoc_Constant.leaderboard_id}"
+            f"https://adventofcode.com/{Aoc_Constant.year}/leaderboard/private/view/" f"{Aoc_Constant.leaderboard_id}"
         )
         self.cached_leaderboard = None
         self._cached_about_aoc = self._cache_info()
@@ -85,8 +84,7 @@ class AdventOfCode:
 
         if not self.cached_leaderboard:
             await ctx.send(
-                "Something's gone wrong and there's no cached leaderboard!\n\n",
-                "Please check in with a staff member.",
+                "Something's gone wrong and there's no cached leaderboard!\n\nPlease check in with a staff member."
             )
             return
 
@@ -124,19 +122,14 @@ class AdventOfCode:
             table = f"```{header}\n{table}```"
 
         # Build embed
-        aoc_embed = discord.Embed(
-            colour=Colours.soft_green, timestamp=self.cached_leaderboard.last_updated
-        )
+        aoc_embed = discord.Embed(colour=Colours.soft_green, timestamp=self.cached_leaderboard.last_updated)
         aoc_embed.set_author(
-            name="Advent of Code",
-            url=self.leaderboard_link,
-            icon_url="https://adventofcode.com/favicon.ico",
+            name="Advent of Code", url=self.leaderboard_link, icon_url="https://adventofcode.com/favicon.ico"
         )
         aoc_embed.set_footer(text="Last Updated")
 
         await ctx.send(
-            content=f"Here's the current Top {n_disp}! {Emojis.christmas_tree*3}\n\n{table}",
-            embed=aoc_embed,
+            content=f"Here's the current Top {n_disp}! {Emojis.christmas_tree*3}\n\n{table}", embed=aoc_embed
         )
 
     async def aoc_update_loop(self, seconds_to_sleep: int = 3600):
@@ -155,9 +148,7 @@ class AdventOfCode:
 
             await asyncio.sleep(seconds_to_sleep)
 
-    async def _cache_info(
-        self, about_aoc_filepath: Path = Path("./bot/resources/advent_of_code/about.txt")
-    ):
+    async def _cache_info(self, about_aoc_filepath: Path = Path("./bot/resources/advent_of_code/about.txt")):
         """
         Load Advent of Code's about.txt & cache for command use
         """
@@ -209,9 +200,7 @@ class AocLeaderboard:
                 if resp.status == 200:
                     raw_dict = await resp.json()
                 else:
-                    log.warning(
-                        f"Bad response received from AoC ({resp.status}), check session cookie"
-                    )
+                    log.warning(f"Bad response received from AoC ({resp.status}), check session cookie")
                     resp.raise_for_status()
 
         return raw_dict
@@ -223,9 +212,7 @@ class AocLeaderboard:
         """
 
         return cls(
-            members=cls._sorted_members(injson["members"]),
-            owner_id=injson["owner_id"],
-            event_year=injson["event"],
+            members=cls._sorted_members(injson["members"]), owner_id=injson["owner_id"], event_year=injson["event"]
         )
 
     @staticmethod
@@ -243,15 +230,7 @@ class AocLeaderboard:
 
 
 class AocMember:
-    def __init__(
-        self,
-        name: str,
-        aoc_id: int,
-        stars: int,
-        starboard: typing.List,
-        local_score: int,
-        global_score: int,
-    ):
+    def __init__(self, name: str, aoc_id: int, stars: int, starboard: typing.List, local_score: int, global_score: int):
         self.name = name
         self.aoc_id = aoc_id
         self.stars = stars
