@@ -252,7 +252,7 @@ class Emojis(metaclass=YAMLGetter):
     cross_mark: str
 
     star: str
-    christmastree: str
+    christmas_tree: str
 
 
 class Icons(metaclass=YAMLGetter):

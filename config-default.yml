@@ -39,7 +39,7 @@ style:
         cross_mark: "\u274C"
 
         star:          "\u2B50"
-        christmastree: "\u1F384"
+        christmas_tree: "\u1F384"
 
     icons:
         crown_blurple: "https://cdn.discordapp.com/emojis/469964153289965568.png"

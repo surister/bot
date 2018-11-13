@@ -31,12 +31,13 @@ class AdventOfCode:
         name="adventofcode",
         aliases=("aoc",),
         invoke_without_command=True,
-        case_insensitive=True,
+        case_insensitive=True
     )
     async def adventofcode_group(self, ctx: commands.Context):
         """
         Advent of Code festivities! Ho Ho Ho!
         """
+
         await ctx.invoke(self.bot.get_command("help"), "adventofcode")
 
     @adventofcode_group.command(name="about", aliases=("ab", "info"))
@@ -44,6 +45,7 @@ class AdventOfCode:
         """
         Respond with an explanation all things Advent of Code
         """
+
         about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
         with about_aoc_filepath.open("r") as f:
             aoc_info_txt = f.read()
@@ -55,6 +57,7 @@ class AdventOfCode:
         """
         Reply with the link to join the PyDis AoC private leaderboard
         """
+
         info_str = (
             "Head over to https://adventofcode.com/leaderboard/private "
             f"with code `{self._leaderboard_code}` to join the PyDis private leaderboard!"
@@ -68,6 +71,7 @@ class AdventOfCode:
         Helper method to reload authentication from its environmental variable in the event
         of login expiration
         """
+
         global AOC_SESSION_COOKIE
         author = ctx.message.author
         log.debug(f"AoC session cookie update forced by {author.name} ({author.id})")
@@ -85,6 +89,7 @@ class AdventOfCode:
         For readability, n_disp is capped at 10. Responses greater than this limit
         (or less than 1) will default to 10 prompt a direct link to the leaderboard.
         """
+
         if not self.cached_leaderboard:
             await ctx.send(
                 "Uh oh! Something's gone wrong and there's no cached leaderboard!\n\n",
@@ -103,8 +108,8 @@ class AdventOfCode:
             )
             await ctx.send(
                 f"{_author.mention}, number of entries to display must be a positive "
-                f"integer less than or equal to {max_entries}"
-                f"\n\nHead to {self._leaderboard_link} to view the entire leaderboard"
+                f"integer less than or equal to {max_entries}\n\n"
+                f"Head to {self._leaderboard_link} to view the entire leaderboard"
             )
             n_disp = max_entries
 
@@ -146,14 +151,15 @@ class AdventOfCode:
         """
         Async timer to update AoC leaderboard
         """
+
         while True:
-            rawjson = await AocLeaderboard._from_url()
+            raw_json = await AocLeaderboard._from_url()
             if self.cached_leaderboard:
-                self.cached_leaderboard._update(rawjson)
+                self.cached_leaderboard._update(raw_json)
             else:
                 # Leaderboard hasn't been cached yet
                 log.debug("No cached AoC leaderboard found")
-                self.cached_leaderboard = AocLeaderboard._from_json(rawjson)
+                self.cached_leaderboard = AocLeaderboard._from_json(raw_json)
 
             await asyncio.sleep(seconds_to_sleep)
 
@@ -169,6 +175,7 @@ class AocLeaderboard:
         """
         From AoC's private leaderboard API JSON, update members & resort
         """
+
         log.debug("Updating cached Advent of Code Leaderboard")
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
@@ -178,6 +185,7 @@ class AocLeaderboard:
 
         If n is not specified, default to the top 10
         """
+
         return self.members[:n]
 
     @staticmethod
@@ -189,6 +197,7 @@ class AocLeaderboard:
 
         If no year is input, year defaults to the current year
         """
+
         api_url = f"https://adventofcode.com/{year}/leaderboard/private/view/{leaderboard_id}.json"
 
         log.debug("Querying Advent of Code Private Leaderboard API")
@@ -198,22 +207,23 @@ class AocLeaderboard:
         ) as session:
             async with session.get(api_url) as resp:
                 if resp.status == 200:
-                    rawdict = await resp.json()
+                    raw_dict = await resp.json()
                 else:
                     log.warning(
                         f"Bad response received from AoC ({resp.status}), check session cookie"
                     )
                     resp.raise_for_status()
 
-        return rawdict
+        return raw_dict
 
-    @staticmethod
-    def _from_json(injson: typing.Dict) -> "AocLeaderboard":
+    @classmethod
+    def from_json(cls, injson: typing.Dict) -> "AocLeaderboard":
         """
         Generate an AocLeaderboard object from AoC's private leaderboard API JSON
         """
-        return AocLeaderboard(
-            members=AocLeaderboard._sorted_members(injson["members"]),
+
+        return cls(
+            members=cls._sorted_members(injson["members"]),
             owner_id=injson["owner_id"],
             event_year=injson["event"],
         )
@@ -253,8 +263,8 @@ class AocMember:
     def __repr__(self):
         return f"<{self.name} ({self.aoc_id}): {self.local_score}>"
 
-    @staticmethod
-    def _member_from_json(injson: typing.Dict) -> "AocMember":
+    @classmethod
+    def member_from_json(cls, injson: typing.Dict) -> "AocMember":
         """
         Generate an AocMember from AoC's private leaderboard API JSON
 
@@ -264,11 +274,12 @@ class AocMember:
 
         Returns an AocMember object
         """
-        return AocMember(
+
+        return cls(
             name=injson["name"] if injson["name"] else "Anonymous User",
             aoc_id=int(injson["id"]),
             stars=injson["stars"],
-            starboard=AocMember._starboard_from_json(injson["completion_day_level"]),
+            starboard=cls._starboard_from_json(injson["completion_day_level"]),
             local_score=injson["local_score"],
             global_score=injson["global_score"],
         )
@@ -285,6 +296,7 @@ class AocMember:
         Returns a list of 25 lists, where each nested list contains a pair of booleans representing
         the code challenge completion status for that day
         """
+
         # Basic input validation
         if not isinstance(injson, dict) or injson is None:
             raise ValueError
@@ -311,6 +323,7 @@ class AocMember:
         """
         Return a tuple of days completed, as a (1 star, 2 star) tuple, from starboard
         """
+
         completions = [0, 0]
         for day in starboard:
             if day[0]:
