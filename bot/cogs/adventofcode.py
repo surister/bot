@@ -9,29 +9,27 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot.constants import BotConfig, Colours, Emojis, Roles
+from bot.constants import AdventOfCode as Aoc_Constant
+from bot.constants import Colours, Emojis, Roles
 from bot.decorators import with_role
 
 log = logging.getLogger(__name__)
 
-AOC_SESSION_COOKIE = {"session": BotConfig.aoc_session_cookie}
+AOC_SESSION_COOKIE = {"session": Aoc_Constant.session_cookie}
 
 
 class AdventOfCode:
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-        self.cached_leaderboard = None
-        self._leaderboard_code = "363275-442b6939"
-        self._leaderboard_link = (
-            "https://adventofcode.com/2018/leaderboard/private/view/363275"
+        self.leaderboard_link = (
+            f"https://adventofcode.com/{Aoc_Constant.year}/leaderboard/private/view/"
+            f"{Aoc_Constant.leaderboard_id}"
         )
+        self.cached_leaderboard = None
 
     @commands.group(
-        name="adventofcode",
-        aliases=("aoc",),
-        invoke_without_command=True,
-        case_insensitive=True
+        name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True
     )
     async def adventofcode_group(self, ctx: commands.Context):
         """
@@ -60,7 +58,7 @@ class AdventOfCode:
 
         info_str = (
             "Head over to https://adventofcode.com/leaderboard/private "
-            f"with code `{self._leaderboard_code}` to join the PyDis private leaderboard!"
+            f"with code `{Aoc_Constant.leaderboard_join_code}` to join the PyDis private leaderboard!"
         )
         await ctx.send(info_str)
 
@@ -73,8 +71,8 @@ class AdventOfCode:
         """
 
         global AOC_SESSION_COOKIE
-        author = ctx.message.author
-        log.debug(f"AoC session cookie update forced by {author.name} ({author.id})")
+        _author = ctx.message.author
+        log.info(f"AoC session cookie update forced by {_author.name} ({_author.id})")
         try:
             AOC_SESSION_COOKIE = {"session": os.environ["AOC_SESSION_COOKIE"]}
         except KeyError:
@@ -92,14 +90,13 @@ class AdventOfCode:
 
         if not self.cached_leaderboard:
             await ctx.send(
-                "Uh oh! Something's gone wrong and there's no cached leaderboard!\n\n",
+                "Something's gone wrong and there's no cached leaderboard!\n\n",
                 "Please check in with a staff member.",
             )
             return
 
-        max_entries = 10
-
         # Check for n > max_entries and n <= 0
+        max_entries = 10
         _author = ctx.message.author
         if not 0 <= n_disp <= max_entries:
             log.debug(
@@ -109,12 +106,12 @@ class AdventOfCode:
             await ctx.send(
                 f"{_author.mention}, number of entries to display must be a positive "
                 f"integer less than or equal to {max_entries}\n\n"
-                f"Head to {self._leaderboard_link} to view the entire leaderboard"
+                f"Head to {self.leaderboard_link} to view the entire leaderboard"
             )
             n_disp = max_entries
 
         # Generate leaderboard table for embed
-        members_to_print = self.cached_leaderboard._top_n(n_disp)
+        members_to_print = self.cached_leaderboard.top_n(n_disp)
         stargroup = f"{Emojis.star}, {Emojis.star*2}"
         header = f"{' '*3}{'Score'} {'Name':^25} {stargroup:^7}\n{'-'*44}"
         table = ""
@@ -133,17 +130,17 @@ class AdventOfCode:
 
         # Build embed
         aoc_embed = discord.Embed(
-            colour=Colours.soft_green, timestamp=self.cached_leaderboard._last_updated
+            colour=Colours.soft_green, timestamp=self.cached_leaderboard.last_updated
         )
         aoc_embed.set_author(
             name="Advent of Code",
-            url=self._leaderboard_link,
+            url=self.leaderboard_link,
             icon_url="https://adventofcode.com/favicon.ico",
         )
         aoc_embed.set_footer(text="Last Updated")
 
         await ctx.send(
-            content=f"Here's the current Top {n_disp}! {Emojis.christmastree*3}\n\n{table}",
+            content=f"Here's the current Top {n_disp}! {Emojis.christmas_tree*3}\n\n{table}",
             embed=aoc_embed,
         )
 
@@ -153,13 +150,13 @@ class AdventOfCode:
         """
 
         while True:
-            raw_json = await AocLeaderboard._from_url()
+            raw_json = await AocLeaderboard.json_from_url()
             if self.cached_leaderboard:
                 self.cached_leaderboard._update(raw_json)
             else:
                 # Leaderboard hasn't been cached yet
                 log.debug("No cached AoC leaderboard found")
-                self.cached_leaderboard = AocLeaderboard._from_json(raw_json)
+                self.cached_leaderboard = AocLeaderboard.from_json(raw_json)
 
             await asyncio.sleep(seconds_to_sleep)
 
@@ -169,7 +166,7 @@ class AocLeaderboard:
         self.members = members
         self._owner_id = owner_id
         self._event_year = event_year
-        self._last_updated = datetime.utcnow()
+        self.last_updated = datetime.utcnow()
 
     def _update(self, injson: typing.Dict):
         """
@@ -179,7 +176,7 @@ class AocLeaderboard:
         log.debug("Updating cached Advent of Code Leaderboard")
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
-    def _top_n(self, n: int = 10) -> typing.Dict:
+    def top_n(self, n: int = 10) -> typing.Dict:
         """
         Return the top n participants on the leaderboard.
 
@@ -189,8 +186,8 @@ class AocLeaderboard:
         return self.members[:n]
 
     @staticmethod
-    async def _json_from_url(
-        leaderboard_id: int = 363_275, year: int = datetime.today().year
+    async def json_from_url(
+        leaderboard_id: int = Aoc_Constant.leaderboard_id, year: int = Aoc_Constant.year
     ) -> "AocLeaderboard":
         """
         Request the API JSON from Advent of Code for leaderboard_id for the specified year's event
@@ -236,7 +233,7 @@ class AocLeaderboard:
         Output list is sorted based on the AocMember.local_score
         """
 
-        members = [AocMember._member_from_json(injson[member]) for member in injson]
+        members = [AocMember.member_from_json(injson[member]) for member in injson]
         members.sort(key=lambda x: x.local_score, reverse=True)
 
         return members

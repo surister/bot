@@ -190,7 +190,6 @@ class Bot(metaclass=YAMLGetter):
 
     help_prefix: str
     token: str
-    aoc_session_cookie: str
 
 
 class Filter(metaclass=YAMLGetter):
@@ -445,6 +444,15 @@ class AntiSpam(metaclass=YAMLGetter):
 
     punishment: Dict[str, Dict[str, int]]
     rules: Dict[str, Dict[str, int]]
+
+
+class AdventOfCode(metaclass=YAMLGetter):
+    section = "advent_of_code"
+
+    session_cookie: str
+    year: int
+    leaderboard_id: int
+    leaderboard_join_code: str
 
 
 # Debug mode
