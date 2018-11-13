@@ -27,10 +27,9 @@ class AdventOfCode:
             f"{Aoc_Constant.leaderboard_id}"
         )
         self.cached_leaderboard = None
+        self._cached_about_aoc = self._cache_info()
 
-    @commands.group(
-        name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True
-    )
+    @commands.group(name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True)
     async def adventofcode_group(self, ctx: commands.Context):
         """
         Advent of Code festivities! Ho Ho Ho!
@@ -44,11 +43,7 @@ class AdventOfCode:
         Respond with an explanation all things Advent of Code
         """
 
-        about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
-        with about_aoc_filepath.open("r") as f:
-            aoc_info_txt = f.read()
-
-        await ctx.send(aoc_info_txt)
+        await ctx.send(self._cached_about_aoc)
 
     @adventofcode_group.command(name="join", aliases=("j",))
     async def join_leaderboard(self, ctx: commands.Context):
@@ -160,6 +155,16 @@ class AdventOfCode:
 
             await asyncio.sleep(seconds_to_sleep)
 
+    async def _cache_info(
+        self, about_aoc_filepath: Path = Path("./bot/resources/advent_of_code/about.txt")
+    ):
+        """
+        Load Advent of Code's about.txt & cache for command use
+        """
+
+        with about_aoc_filepath.open("r") as f:
+            self._cached_about_aoc = f.read()
+
 
 class AocLeaderboard:
     def __init__(self, members: typing.List, owner_id: int, event_year: int):
@@ -199,9 +204,7 @@ class AocLeaderboard:
 
         log.debug("Querying Advent of Code Private Leaderboard API")
         headers = {"user-agent": "PythonDiscord AoC Event Bot"}
-        async with aiohttp.ClientSession(
-            cookies=AOC_SESSION_COOKIE, headers=headers
-        ) as session:
+        async with aiohttp.ClientSession(cookies=AOC_SESSION_COOKIE, headers=headers) as session:
             async with session.get(api_url) as resp:
                 if resp.status == 200:
                     raw_dict = await resp.json()
