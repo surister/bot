@@ -1,6 +1,6 @@
 bot:
-    help_prefix:          "bot."
-    token:  !REQUIRED_ENV "BOT_TOKEN"
+    help_prefix:      "bot."
+    token:       !ENV "BOT_TOKEN"
 
     cooldowns:
         # Per channel, per tag.
@@ -132,7 +132,7 @@ guild:
 filter:
 
     # What do we filter?
-    filter_zalgo:   true
+    filter_zalgo:   false
     filter_invites: true
     filter_domains: true
     watch_words:    true
@@ -221,7 +221,7 @@ urls:
     site_bigbrother_api:                !JOIN [*SCHEMA, *API, "/bot/bigbrother"]
     site_docs_api:                      !JOIN [*SCHEMA, *API, "/bot/docs"]
     site_facts_api:                     !JOIN [*SCHEMA, *API, "/bot/snake_facts"]
-    site_hiphopify_api:                 !JOIN [*SCHEMA, *API, "/bot/hiphopify"]
+    site_superstarify_api:              !JOIN [*SCHEMA, *API, "/bot/superstarify"]
     site_idioms_api:                    !JOIN [*SCHEMA, *API, "/bot/snake_idioms"]
     site_infractions:                   !JOIN [*SCHEMA, *API, "/bot/infractions"]
     site_infractions_user:              !JOIN [*SCHEMA, *API, "/bot/infractions/user/{user_id}"]
@@ -291,7 +291,7 @@ anti_spam:
 
         links:
             interval: 10
-            max: 20
+            max: 10
 
         mentions:
             interval: 10
@@ -322,3 +322,6 @@ advent_of_code:
     year: 2018
     leaderboard_id: 363275
     leaderboard_join_code: "363275-442b6939"
+
+config:
+    required_keys: ['bot.token']
