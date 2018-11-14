@@ -279,7 +279,7 @@ class AocMember:
         """
 
         # Basic input validation
-        if not isinstance(injson, dict) or injson is None:
+        if not isinstance(injson, dict):
             raise ValueError
 
         # Initialize starboard
