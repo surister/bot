@@ -148,10 +148,12 @@ class AdventOfCode:
 
             await asyncio.sleep(seconds_to_sleep)
 
-    async def _cache_info(self, about_aoc_filepath: Path = Path("./bot/resources/advent_of_code/about.txt")):
+    async def _cache_info(self, about_aoc_filepath: Path):
         """
         Load Advent of Code's about.txt & cache for command use
         """
+        if not about_aoc_filepath:
+            about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
 
         with about_aoc_filepath.open("r") as f:
             self._cached_about_aoc = f.read()
