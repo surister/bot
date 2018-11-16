@@ -1,5 +1,5 @@
 bot:
-    help_prefix:      "bot."
+    prefix:      "!"
     token:       !ENV "BOT_TOKEN"
 
     cooldowns:
@@ -80,6 +80,7 @@ style:
         remind_green:   "https://cdn.discordapp.com/emojis/477907607785570310.png"
         remind_red:     "https://cdn.discordapp.com/emojis/477907608057937930.png"
 
+        questionmark: "https://cdn.discordapp.com/emojis/512367613339369475.png"
 
 guild:
     id: 267624335836053506
@@ -311,17 +312,24 @@ reddit:
     subreddits:
         - 'r/Python'
 
+
 wolfram:
     # Max requests per day.
     user_limit_day: 10
     guild_limit_day: 67
     key: !ENV "WOLFRAM_API_KEY"
 
+
 advent_of_code:
     session_cookie: !ENV "AOC_SESSION_COOKIE"
     year: 2018
     leaderboard_id: 363275
     leaderboard_join_code: "363275-442b6939"
+
+
+big_brother:
+    log_delay: 15
+
 
 config:
     required_keys: ['bot.token']

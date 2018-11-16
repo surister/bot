@@ -191,7 +191,7 @@ class YAMLGetter(type):
 class Bot(metaclass=YAMLGetter):
     section = "bot"
 
-    help_prefix: str
+    prefix: str
     token: str
 
 
@@ -241,7 +241,7 @@ class Emojis(metaclass=YAMLGetter):
     green_chevron: str
     red_chevron: str
     white_chevron: str
-    lemoneye2: str
+    bb_message: str
 
     status_online: str
     status_offline: str
@@ -299,6 +299,8 @@ class Icons(metaclass=YAMLGetter):
     remind_blurple: str
     remind_green: str
     remind_red: str
+
+    questionmark: str
 
 
 class CleanMessages(metaclass=YAMLGetter):
@@ -456,6 +458,12 @@ class AdventOfCode(metaclass=YAMLGetter):
     year: int
     leaderboard_id: int
     leaderboard_join_code: str
+
+
+class BigBrother(metaclass=YAMLGetter):
+    section = 'big_brother'
+
+    log_delay: int
 
 
 # Debug mode

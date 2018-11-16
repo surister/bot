@@ -12,7 +12,7 @@ from bot.utils.service_discovery import wait_for_rmq
 log = logging.getLogger(__name__)
 
 bot = Bot(
-    command_prefix=when_mentioned_or("!"),
+    command_prefix=when_mentioned_or(BotConfig.prefix),
     activity=Game(name="Commands: !help"),
     case_insensitive=True,
     max_messages=10_000
@@ -49,6 +49,7 @@ bot.load_extension("bot.cogs.bigbrother")
 bot.load_extension("bot.cogs.bot")
 bot.load_extension("bot.cogs.clean")
 bot.load_extension("bot.cogs.cogs")
+bot.load_extension("bot.cogs.help")
 
 # Only load this in production
 if not DEBUG_MODE:
