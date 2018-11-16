@@ -122,9 +122,7 @@ class AdventOfCode:
 
         # Build embed
         aoc_embed = discord.Embed(colour=Colours.soft_green, timestamp=self.cached_leaderboard.last_updated)
-        aoc_embed.set_author(
-            name="Advent of Code", url=self.leaderboard_link, icon_url="https://adventofcode.com/favicon.ico"
-        )
+        aoc_embed.set_author(name="Advent of Code", url=self.leaderboard_link)
         aoc_embed.set_footer(text="Last Updated")
 
         await ctx.send(
