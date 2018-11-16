@@ -79,9 +79,11 @@ class AdventOfCode:
         """
         Pull the top n_disp members from the PyDis leaderboard and post an embed
 
-        For readability, n_disp is capped at 10. Responses greater than this limit
-        (or less than 1) will default to 10 prompt a direct link to the leaderboard.
+        For readability, n_disp defaults to 10. A maximum value is configured in the
+        Advent of Code section of the bot constants. n_disp values greater than this
+        limit will default to this maximum and provide feedback to the user.
         """
+        self._check_leaderboard_cache()
 
         if not self.cached_leaderboard:
             await ctx.send(
@@ -90,7 +92,7 @@ class AdventOfCode:
             return
 
         # Check for n > max_entries and n <= 0
-        max_entries = 10
+        max_entries = AocConfig.leaderboard_max_displayed_members
         _author = ctx.message.author
         if not 0 <= n_disp <= max_entries:
             log.debug(
@@ -135,7 +137,16 @@ class AdventOfCode:
         """
         Check age of current leaderboard & pull a new one if the board is too old
         """
-        raise NotImplementedError
+        if not self.cached_leaderboard:
+            log.debug("No cached leaderboard found")
+            self.cached_leaderboard = AocLeaderboard.from_url()
+        else:
+            leaderboard_age = datetime.utcnow() - self.cached_leaderboard.last_updated
+            if leaderboard_age.total_seconds < AocConfig.leaderboard_cache_age_threshold_seconds:
+                log.debug("Cached leaderboard age less than threshold")
+            else:
+                log.debug("Cached leaderboard age greater than threshold")
+                self.cached_leaderboard.update()
 
 
 class AocLeaderboard:
@@ -145,7 +156,7 @@ class AocLeaderboard:
         self._event_year = event_year
         self.last_updated = datetime.utcnow()
 
-    def _update(self, injson: dict):
+    def update(self, injson: dict):
         """
         From AoC's private leaderboard API JSON, update members & resort
         """
@@ -195,6 +206,14 @@ class AocLeaderboard:
         return cls(
             members=cls._sorted_members(injson["members"]), owner_id=injson["owner_id"], event_year=injson["event"]
         )
+
+    @classmethod
+    async def from_url(cls) -> "AocLeaderboard":
+        """
+        Helper wrapping of AocLeaderboard.json_from_url and AocLeaderboard.from_json
+        """
+        api_json = await cls.json_from_url()
+        return cls.from_json(api_json)
 
     @staticmethod
     def _sorted_members(injson: dict) -> list:

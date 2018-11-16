@@ -458,6 +458,8 @@ class AdventOfCode(metaclass=YAMLGetter):
     year: int
     leaderboard_id: int
     leaderboard_join_code: str
+    leaderboard_cache_age_threshold_seconds: int
+    leaderboard_max_displayed_members: int
 
 
 class BigBrother(metaclass=YAMLGetter):

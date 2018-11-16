@@ -325,7 +325,8 @@ advent_of_code:
     year: 2018
     leaderboard_id: 363275
     leaderboard_join_code: "363275-442b6939"
-
+    leaderboard_cache_age_threshold_seconds: 3600
+    leaderboard_max_displayed_members: 10
 
 big_brother:
     log_delay: 15
