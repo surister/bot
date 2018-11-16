@@ -25,6 +25,8 @@ class AdventOfCode:
             f"https://adventofcode.com/{AocConfig.year}/leaderboard/private/view/" f"{AocConfig.leaderboard_id}"
         )
         self.cached_leaderboard = None
+
+        self.about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
         self._cached_about_aoc = self._cache_info()
 
     @commands.group(name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True)
@@ -145,14 +147,11 @@ class AdventOfCode:
 
             await asyncio.sleep(seconds_to_sleep)
 
-    async def _cache_info(self, about_aoc_filepath: Path):
+    async def _cache_info(self):
         """
         Load Advent of Code's about.txt & cache for command use
         """
-        if not about_aoc_filepath:
-            about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
-
-        with about_aoc_filepath.open("r") as f:
+        with self.about_aoc_filepath.open("r") as f:
             self._cached_about_aoc = f.read()
 
 
