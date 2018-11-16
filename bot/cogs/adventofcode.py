@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from datetime import datetime
@@ -27,7 +26,8 @@ class AdventOfCode:
         self.cached_leaderboard = None
 
         self.about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
-        self._cached_about_aoc = self._cache_info()
+        with self.about_aoc_filepath.open("r") as f:
+            self.cached_about_aoc = f.read()
 
     @commands.group(name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True)
     async def adventofcode_group(self, ctx: commands.Context):
@@ -43,7 +43,7 @@ class AdventOfCode:
         Respond with an explanation all things Advent of Code
         """
 
-        await ctx.send(self._cached_about_aoc)
+        await ctx.send(self.cached_about_aoc)
 
     @adventofcode_group.command(name="join", aliases=("j",))
     async def join_leaderboard(self, ctx: commands.Context):
@@ -131,28 +131,11 @@ class AdventOfCode:
             content=f"Here's the current Top {n_disp}! {Emojis.christmas_tree*3}\n\n{table}", embed=aoc_embed
         )
 
-    async def aoc_update_loop(self, seconds_to_sleep: int = 3600):
+    async def _check_leaderboard_cache(self):
         """
-        Async timer to update AoC leaderboard
+        Check age of current leaderboard & pull a new one if the board is too old
         """
-
-        while True:
-            raw_json = await AocLeaderboard.json_from_url()
-            if self.cached_leaderboard:
-                self.cached_leaderboard._update(raw_json)
-            else:
-                # Leaderboard hasn't been cached yet
-                log.debug("No cached AoC leaderboard found")
-                self.cached_leaderboard = AocLeaderboard.from_json(raw_json)
-
-            await asyncio.sleep(seconds_to_sleep)
-
-    async def _cache_info(self):
-        """
-        Load Advent of Code's about.txt & cache for command use
-        """
-        with self.about_aoc_filepath.open("r") as f:
-            self._cached_about_aoc = f.read()
+        raise NotImplementedError
 
 
 class AocLeaderboard:
