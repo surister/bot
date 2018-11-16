@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import typing
 from datetime import datetime
 from pathlib import Path
 
@@ -9,13 +8,13 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from bot.constants import AdventOfCode as Aoc_Constant
+from bot.constants import AdventOfCode as AocConfig
 from bot.constants import Colours, Emojis, Roles
 from bot.decorators import with_role
 
 log = logging.getLogger(__name__)
 
-AOC_SESSION_COOKIE = {"session": Aoc_Constant.session_cookie}
+AOC_SESSION_COOKIE = {"session": AocConfig.session_cookie}
 
 
 class AdventOfCode:
@@ -23,7 +22,7 @@ class AdventOfCode:
         self.bot = bot
 
         self.leaderboard_link = (
-            f"https://adventofcode.com/{Aoc_Constant.year}/leaderboard/private/view/" f"{Aoc_Constant.leaderboard_id}"
+            f"https://adventofcode.com/{AocConfig.year}/leaderboard/private/view/" f"{AocConfig.leaderboard_id}"
         )
         self.cached_leaderboard = None
         self._cached_about_aoc = self._cache_info()
@@ -52,7 +51,7 @@ class AdventOfCode:
 
         info_str = (
             "Head over to https://adventofcode.com/leaderboard/private "
-            f"with code `{Aoc_Constant.leaderboard_join_code}` to join the PyDis private leaderboard!"
+            f"with code `{AocConfig.leaderboard_join_code}` to join the PyDis private leaderboard!"
         )
         await ctx.send(info_str)
 
@@ -160,13 +159,13 @@ class AdventOfCode:
 
 
 class AocLeaderboard:
-    def __init__(self, members: typing.List, owner_id: int, event_year: int):
+    def __init__(self, members: list, owner_id: int, event_year: int):
         self.members = members
         self._owner_id = owner_id
         self._event_year = event_year
         self.last_updated = datetime.utcnow()
 
-    def _update(self, injson: typing.Dict):
+    def _update(self, injson: dict):
         """
         From AoC's private leaderboard API JSON, update members & resort
         """
@@ -174,7 +173,7 @@ class AocLeaderboard:
         log.debug("Updating cached Advent of Code Leaderboard")
         self.members = AocLeaderboard._sorted_members(injson["members"])
 
-    def top_n(self, n: int = 10) -> typing.Dict:
+    def top_n(self, n: int = 10) -> dict:
         """
         Return the top n participants on the leaderboard.
 
@@ -185,7 +184,7 @@ class AocLeaderboard:
 
     @staticmethod
     async def json_from_url(
-        leaderboard_id: int = Aoc_Constant.leaderboard_id, year: int = Aoc_Constant.year
+        leaderboard_id: int = AocConfig.leaderboard_id, year: int = AocConfig.year
     ) -> "AocLeaderboard":
         """
         Request the API JSON from Advent of Code for leaderboard_id for the specified year's event
@@ -208,7 +207,7 @@ class AocLeaderboard:
         return raw_dict
 
     @classmethod
-    def from_json(cls, injson: typing.Dict) -> "AocLeaderboard":
+    def from_json(cls, injson: dict) -> "AocLeaderboard":
         """
         Generate an AocLeaderboard object from AoC's private leaderboard API JSON
         """
@@ -218,7 +217,7 @@ class AocLeaderboard:
         )
 
     @staticmethod
-    def _sorted_members(injson: typing.Dict) -> typing.List:
+    def _sorted_members(injson: dict) -> list:
         """
         Generate a sorted list of AocMember objects from AoC's private leaderboard API JSON
 
@@ -232,7 +231,7 @@ class AocLeaderboard:
 
 
 class AocMember:
-    def __init__(self, name: str, aoc_id: int, stars: int, starboard: typing.List, local_score: int, global_score: int):
+    def __init__(self, name: str, aoc_id: int, stars: int, starboard: list, local_score: int, global_score: int):
         self.name = name
         self.aoc_id = aoc_id
         self.stars = stars
@@ -245,7 +244,7 @@ class AocMember:
         return f"<{self.name} ({self.aoc_id}): {self.local_score}>"
 
     @classmethod
-    def member_from_json(cls, injson: typing.Dict) -> "AocMember":
+    def member_from_json(cls, injson: dict) -> "AocMember":
         """
         Generate an AocMember from AoC's private leaderboard API JSON
 
@@ -266,7 +265,7 @@ class AocMember:
         )
 
     @staticmethod
-    def _starboard_from_json(injson: typing.Dict) -> typing.List:
+    def _starboard_from_json(injson: dict) -> list:
         """
         Generate starboard from AoC's private leaderboard API JSON
 
@@ -300,9 +299,9 @@ class AocMember:
         return starboard
 
     @staticmethod
-    def _completions_from_starboard(starboard: typing.List) -> typing.Tuple:
+    def _completions_from_starboard(starboard: list) -> tuple:
         """
-        Return a tuple of days completed, as a (1 star, 2 star) tuple, from starboard
+        Return days completed, as a (1 star, 2 star) tuple, from starboard
         """
 
         completions = [0, 0]
