@@ -71,7 +71,13 @@ class AdventOfCode:
             AOC_SESSION_COOKIE = {"session": os.environ["AOC_SESSION_COOKIE"]}  # noqa
         except KeyError:
             log.warning("AoC session key environment variable is not set")
-            ctx.send("AoC session key environment variable is not set")
+            ctx.send(
+                "",
+                embed=_error_embed_helper(
+                    title="AoC session key environment variable is not set",
+                    description="Ensure 'AOC_SESSION_COOKIE' environment variable is set before invoking command",
+                ),
+            )
 
     @adventofcode_group.command(name="leaderboard", aliases=("board", "stats"))
     async def aoc_leaderboard(self, ctx: commands.Context, n_disp: int = 10):
@@ -86,7 +92,11 @@ class AdventOfCode:
 
         if not self.cached_leaderboard:
             await ctx.send(
-                "Something's gone wrong and there's no cached leaderboard!\n\nPlease check in with a staff member."
+                "",
+                _error_embed_helper(
+                    title="Something's gone wrong and there's no cached leaderboard!",
+                    description="Please check in with a staff member.",
+                ),
             )
             return
 
@@ -99,7 +109,7 @@ class AdventOfCode:
                 f" of entries from the AoC leaderboard ({n_disp})"
             )
             await ctx.send(
-                f"{_author.mention}, number of entries to display must be a positive "
+                f":x: {_author.mention}, number of entries to display must be a positive "
                 f"integer less than or equal to {max_entries}\n\n"
                 f"Head to {self.leaderboard_link} to view the entire leaderboard"
             )
@@ -331,6 +341,13 @@ class AocMember:
                 completions[1] += 1
 
         return tuple(completions)
+
+
+def _error_embed_helper(title: str, description: str) -> discord.Embed:
+    """
+    Return a red-colored Embed with the given title and description
+    """
+    return discord.Embed(title=title, description=description, colour=discord.Colour.red)
 
 
 def setup(bot: commands.Bot) -> None:
