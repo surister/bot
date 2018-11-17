@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from datetime import datetime
@@ -25,9 +26,8 @@ class AdventOfCode:
         )
         self.cached_leaderboard = None
 
-        self.about_aoc_filepath = Path("./bot/resources/advent_of_code/about.txt")
-        with self.about_aoc_filepath.open("r") as f:
-            self.cached_about_aoc = f.read()
+        self.about_aoc_filepath = Path("./bot/resources/advent_of_code/about.json")
+        self.cached_about_aoc = self._build_about_embed()
 
     @commands.group(name="adventofcode", aliases=("aoc",), invoke_without_command=True)
     async def adventofcode_group(self, ctx: commands.Context):
@@ -43,7 +43,7 @@ class AdventOfCode:
         Respond with an explanation all things Advent of Code
         """
 
-        await ctx.send(self.cached_about_aoc)
+        await ctx.send("", embed=self.cached_about_aoc)
 
     @adventofcode_group.command(name="join", aliases=("j",))
     async def join_leaderboard(self, ctx: commands.Context):
@@ -68,7 +68,7 @@ class AdventOfCode:
         _author = ctx.message.author
         log.info(f"AoC session cookie update forced by {_author.name} ({_author.id})")
         try:
-            AOC_SESSION_COOKIE = {"session": os.environ["AOC_SESSION_COOKIE"]}
+            AOC_SESSION_COOKIE = {"session": os.environ["AOC_SESSION_COOKIE"]}  # noqa
         except KeyError:
             log.warning("AoC session key environment variable is not set")
             ctx.send("AoC session key environment variable is not set")
@@ -136,6 +136,7 @@ class AdventOfCode:
         """
         Check age of current leaderboard & pull a new one if the board is too old
         """
+
         if not self.cached_leaderboard:
             log.debug("No cached leaderboard found")
             self.cached_leaderboard = AocLeaderboard.from_url()
@@ -147,6 +148,25 @@ class AdventOfCode:
             else:
                 log.debug(f"Cached leaderboard age greater than threshold ({age_seconds} seconds old)")
                 self.cached_leaderboard.update()
+
+    def _build_about_embed(self) -> discord.Embed:
+        """
+        Build and return the informational "About AoC" embed from the resources file
+        """
+
+        with self.about_aoc_filepath.open("r") as f:
+            embed_fields = json.load(f)
+
+        about_embed = discord.Embed(
+            title="https://adventofcode.com/", colour=Colours.soft_green, url="https://adventofcode.com/"
+        )
+        about_embed.set_author(name="Advent of Code", url="https://discordapp.com")
+        for field in embed_fields:
+            about_embed.add_field(**field)
+
+        about_embed.set_footer(text=f"Last Updated (UTC): {datetime.utcnow()}")
+
+        return about_embed
 
 
 class AocLeaderboard:
