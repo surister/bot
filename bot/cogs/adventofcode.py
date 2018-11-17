@@ -21,7 +21,7 @@ class AdventOfCode:
         self.bot = bot
 
         self.leaderboard_link = (
-            f"https://adventofcode.com/{AocConfig.year}/leaderboard/private/view/" f"{AocConfig.leaderboard_id}"
+            f"https://adventofcode.com/{AocConfig.year}/leaderboard/private/view/{AocConfig.leaderboard_id}"
         )
         self.cached_leaderboard = None
 
@@ -65,7 +65,6 @@ class AdventOfCode:
         of login expiration
         """
 
-        global AOC_SESSION_COOKIE
         _author = ctx.message.author
         log.info(f"AoC session cookie update forced by {_author.name} ({_author.id})")
         try:
@@ -142,10 +141,11 @@ class AdventOfCode:
             self.cached_leaderboard = AocLeaderboard.from_url()
         else:
             leaderboard_age = datetime.utcnow() - self.cached_leaderboard.last_updated
-            if leaderboard_age.total_seconds < AocConfig.leaderboard_cache_age_threshold_seconds:
-                log.debug("Cached leaderboard age less than threshold")
+            age_seconds = leaderboard_age.total_seconds()
+            if age_seconds < AocConfig.leaderboard_cache_age_threshold_seconds:
+                log.debug(f"Cached leaderboard age less than threshold ({age_seconds} seconds old)")
             else:
-                log.debug("Cached leaderboard age greater than threshold")
+                log.debug(f"Cached leaderboard age greater than threshold ({age_seconds} seconds old)")
                 self.cached_leaderboard.update()
 
 

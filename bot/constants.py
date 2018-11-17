@@ -454,12 +454,12 @@ class AntiSpam(metaclass=YAMLGetter):
 class AdventOfCode(metaclass=YAMLGetter):
     section = "advent_of_code"
 
-    session_cookie: str
-    year: int
+    leaderboard_cache_age_threshold_seconds: int
     leaderboard_id: int
     leaderboard_join_code: str
-    leaderboard_cache_age_threshold_seconds: int
     leaderboard_max_displayed_members: int
+    session_cookie: str
+    year: int
 
 
 class BigBrother(metaclass=YAMLGetter):
