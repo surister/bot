@@ -29,7 +29,7 @@ class AdventOfCode:
         with self.about_aoc_filepath.open("r") as f:
             self.cached_about_aoc = f.read()
 
-    @commands.group(name="adventofcode", aliases=("aoc", "AoC", "AOC"), invoke_without_command=True)
+    @commands.group(name="adventofcode", aliases=("aoc",), invoke_without_command=True)
     async def adventofcode_group(self, ctx: commands.Context):
         """
         Advent of Code festivities! Ho Ho Ho!
